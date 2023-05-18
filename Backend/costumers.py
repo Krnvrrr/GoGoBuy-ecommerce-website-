@@ -24,7 +24,7 @@ def costumerRegister():
         'phone':request.json['phone'],
         'name':request.json['name'],
         'password':hashed,
-        'cart':[""]
+        'cart':[]
     })
     data = all_users.find_one({'email': request.json['email']})
     access_token = jwt.encode({'id': str(data['_id'])}, current_app.config['SECRET_KEY'])
@@ -48,38 +48,102 @@ def costumerLogin():
         return jsonify(message="plese enter valid login credentials"),400
 
 @costumer.route("/addCart/<id>",methods=['put'])
-def addCart(id):
+def addtoCart(id):
     '''Route for a costumer to add a product into cart'''
     try:
         token = request.headers['auth-token']
-        if not token:
+        user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        if not token == user_id['id']:
             return jsonify(message="use a valid auth token"), 401
     except:
-        return jsonify(message="you are not using a token")
-    id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        return jsonify(message="you are not using a token"), 400
+    user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
     all_users = PyMongo(current_app).db.costumer
-    user = all_users.find_one({'_id': ObjectId(id['id'])})
-    item=list(user['cart'])
-    our_cart=item.append(str(id['id']))
-    all_users.update_one({'_id': ObjectId(id['id'])},
-                         {"$set":{
-                             'cart':our_cart
+    user=all_users.find_one({'_id': ObjectId(user_id['id'])})
+    x=0;
+    flag=False
+    for find in user['cart']:
+        print(str(id))
+        if(find['map']==str(id)):
+            flag=True
+            break;
+        x=x+1
+    if flag:
+        quantity = user['cart'][x]['quantity']
+        all_users.update_one({'_id': ObjectId(user_id['id']), 'cart': {'map': str(id), 'quantity': quantity}},
+                             {"$set": {
+                                 'cart.$': {"map": str(id), "quantity": quantity+1}}
+                             })
+
+    else:
+        all_users.update_one({'_id': ObjectId(user_id['id'])},
+                         {"$push":{
+                             'cart':{'$each':[{"map":str(id),"quantity":1}]}
                          }})
-    print(user['cart'])
     return jsonify(message="successfully added to cart")
 
-# @costumer.route("/cart",methods=['get'])
-# def cart():
-#     '''desplaying products in cart of perticular costumer'''
-#     try:
-#         token = request.headers['auth-token']
-#         if not token:
-#             return jsonify(message="use a valid auth token"), 401
-#     except:
-#         return jsonify(message="you are not using a token")
-#     id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
-#     all_users = PyMongo(current_app).db.costumer
-#     user = all_users.find_one({'_id': ObjectId(id['id'])})
-#     items=user['cart'].split(",")
-#     print(items)
-#     return jsonify(message="i dont think this is a good way")
+@costumer.route("/removeCart/<id>",methods=['put'])
+def removeCart(id):
+    '''Route for a costumer to add a product into cart'''
+    try:
+        token = request.headers['auth-token']
+        user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        if not token == user_id['id']:
+            return jsonify(message="use a valid auth token"), 401
+    except:
+        return jsonify(message="you are not using a token"), 400
+    user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+    all_users = PyMongo(current_app).db.costumer
+    user=all_users.find_one({'_id': ObjectId(user_id['id'])})
+    x=0;
+    flag=False
+    for find in user['cart']:
+        print(str(id))
+        if(find['map']==str(id)):
+            flag=True
+            break;
+        x=x+1
+    if flag:
+        quantity = user['cart'][x]['quantity']
+        if quantity>1:
+
+            all_users.update_one({'_id': ObjectId(user_id['id']), 'cart': {'map': str(id), 'quantity': quantity}},
+                             {"$set": {
+                                 'cart.$': {"map": str(id), "quantity": quantity-1}}
+                             })
+        else:
+            all_users.update_one({'_id': ObjectId(user_id['id'])},
+                                 { "$pull":
+                                  {'cart': {"$in":[{"map": str(id), "quantity":quantity}]}}
+                                 })
+
+    else:
+        return jsonify(message="following item is not even in your cart")
+    return jsonify(message="successfully removed item from cart")
+
+@costumer.route("/cart",methods=['get'])
+def cart():
+    '''desplaying products in cart of perticular costumer'''
+    try:
+        token = request.headers['auth-token']
+        user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        if not token == user_id['id']:
+            return jsonify(message="use a valid auth token"), 401
+    except:
+        return jsonify(message="you are not using a token"), 400
+    user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+    all_users = PyMongo(current_app).db.costumer
+    user = all_users.find_one({'_id': ObjectId(user_id['id'])})
+    products=[]
+    all_product = PyMongo(current_app).db.items
+    for product in user['cart']:
+        item=all_product.find_one({'_id':ObjectId(product['map'])})
+        products.append({
+            "product_name": item["product_name"],
+            "id": str(item['_id']),
+            "unit_price": item["unit_price"],
+            "cetagory": item["cetagory"],
+            "quantity":product['quantity']
+        })
+
+    return jsonify(products)

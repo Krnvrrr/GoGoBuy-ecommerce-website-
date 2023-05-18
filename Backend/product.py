@@ -10,10 +10,11 @@ def allItems():
     '''for desplaying all products in our database'''
     try:
         token = request.headers['auth-token']
-        if not token:
+        user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        if not token == user_id['id']:
             return jsonify(message="use a valid auth token"), 401
     except:
-        return jsonify(message="you are not using a token")
+        return jsonify(message="you are not using a token"), 400
     all_product = PyMongo(current_app).db.items
     all_items=[]
 
@@ -56,10 +57,11 @@ def updateitem(id):
     '''updating selected product'''
     try:
         token = request.headers['auth-token']
-        if not token:
+        user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        if not token==user_id['id']:
             return jsonify(message="use a valid auth token"), 401
     except:
-        return jsonify(message="you are not using a token")
+        return jsonify(message="you are not using a token"),400
 
     all_product = PyMongo(current_app).db.items
     all_product.update_one({'_id':ObjectId(id)},
@@ -73,10 +75,11 @@ def deleteitem(id):
     '''deleting selected product'''
     try:
         token = request.headers['auth-token']
-        if not token:
+        user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        if not token == user_id['id']:
             return jsonify(message="use a valid auth token"), 401
     except:
-        return jsonify(message="you are not using a token")
+        return jsonify(message="you are not using a token"), 400
 
     all_product = PyMongo(current_app).db.items
     all_product.delete_one({'_id':ObjectId(id)})
@@ -87,10 +90,11 @@ def cetagorytems(cetagory):
     '''getting products cetagorywise'''
     try:
         token = request.headers['auth-token']
-        if not token:
+        user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        if not token == user_id['id']:
             return jsonify(message="use a valid auth token"), 401
     except:
-        return jsonify(message="you are not using a token")
+        return jsonify(message="you are not using a token"), 400
     all_product = PyMongo(current_app).db.items
     all_items=[]
 
