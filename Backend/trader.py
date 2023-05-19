@@ -72,7 +72,9 @@ def adminitems():
                     "product_name": user["product_name"],
                     "id": str(user['_id']),
                     "unit_price": user["unit_price"],
-                    "cetagory": user["cetagory"]
+                    "cetagory": user["cetagory"],
+                    "rating": user["rating"],
+                    "company_name": user["company_name"]
                 })
 
             return jsonify(all_items), 200

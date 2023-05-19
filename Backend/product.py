@@ -25,7 +25,9 @@ def allItems():
             "product_name":user["product_name"],
             "id":str(user['_id']),
             "unit_price":user["unit_price"],
-            "cetagory":user["cetagory"]
+            "cetagory":user["cetagory"],
+            "rating":user["rating"],
+            "company_name":user["company_name"]
         })
 
     return jsonify(all_items),200
@@ -48,11 +50,13 @@ def createOne():
     if item:
         return jsonify(message="product with same name already exist"),401
     user_id = jwt.decode(token,key=current_app.config['SECRET_KEY'],algorithms=['HS256'])
+    check = all_users.find_one({'_id': ObjectId(user_id['id'])})
     all_product.insert_one({
         'product_name': request.json['product_name'],
         'unit_price': request.json['unit_price'],
         'cetagory': request.json['cetagory'],
         'user_id':user_id['id'],
+        'company_name':check['company_name'],
         'rating':'not rated'
     })
     return jsonify(message= "item added successfully"),200
