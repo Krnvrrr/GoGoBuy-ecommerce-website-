@@ -3,6 +3,7 @@ from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
 import jwt
 import datetime
+from bson import ObjectId
 trader =   Blueprint("trader",__name__)
 @trader.route("/Register",methods=["post"])
 def adminRegister():
@@ -57,20 +58,23 @@ def adminitems():
     '''route for getting all the producted uploaded by perticular seller'''
     try:
         token = request.headers['auth-token']
+        all_users = PyMongo(current_app).db.admin
         user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
-        if not token == user_id['id']:
+        check = all_users.find_one({'_id':ObjectId(user_id['id'])})
+        if not check:
             return jsonify(message="use a valid auth token"), 401
+        else:
+            all_product = PyMongo(current_app).db.items
+            all_items = []
+            id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+            for user in all_product.find({'user_id': str(id['id'])}):
+                all_items.append({
+                    "product_name": user["product_name"],
+                    "id": str(user['_id']),
+                    "unit_price": user["unit_price"],
+                    "cetagory": user["cetagory"]
+                })
+
+            return jsonify(all_items), 200
     except:
         return jsonify(message="you are not using a token"), 400
-    all_product = PyMongo(current_app).db.items
-    all_items=[]
-    id=jwt.decode(token,key=current_app.config['SECRET_KEY'],algorithms=['HS256'])
-    for user in all_product.find({'user_id':str(id['id'])}):
-        all_items.append({
-            "product_name":user["product_name"],
-            "id":str(user['_id']),
-            "unit_price":user["unit_price"],
-            "cetagory":user["cetagory"]
-        })
-
-    return jsonify(all_items),200

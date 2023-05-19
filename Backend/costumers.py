@@ -13,7 +13,7 @@ def costumerRegister():
     user= all_users.find_one({'email':request.json['email']})
     phone=all_users.find_one({'phone': request.json['phone']})
     if user:
-        return jsonify(message="user with same email already exists"),401
+        return jsonify(message="user with same email already exists"),401 
 
     if phone:
         return jsonify(message="user with same phone number already exists"),401
@@ -52,8 +52,10 @@ def addtoCart(id):
     '''Route for a costumer to add a product into cart'''
     try:
         token = request.headers['auth-token']
+        all_users = PyMongo(current_app).db.costumer
         user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
-        if not token == user_id['id']:
+        check = all_users.find_one({'_id': ObjectId(user_id['id'])})
+        if not check:
             return jsonify(message="use a valid auth token"), 401
     except:
         return jsonify(message="you are not using a token"), 400
@@ -87,8 +89,10 @@ def removeCart(id):
     '''Route for a costumer to add a product into cart'''
     try:
         token = request.headers['auth-token']
+        all_users = PyMongo(current_app).db.costumer
         user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
-        if not token == user_id['id']:
+        check = all_users.find_one({'_id': ObjectId(user_id['id'])})
+        if not check:
             return jsonify(message="use a valid auth token"), 401
     except:
         return jsonify(message="you are not using a token"), 400
@@ -126,8 +130,10 @@ def cart():
     '''desplaying products in cart of perticular costumer'''
     try:
         token = request.headers['auth-token']
+        all_users = PyMongo(current_app).db.costumer
         user_id = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
-        if not token == user_id['id']:
+        check = all_users.find_one({'_id': ObjectId(user_id['id'])})
+        if not check:
             return jsonify(message="use a valid auth token"), 401
     except:
         return jsonify(message="you are not using a token"), 400
